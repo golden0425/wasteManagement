@@ -79,7 +79,6 @@ class Promise{
         }
         if(this.status === 'pending'){
             promise2 = new Promise((resolve,reject)=>{
-
                 // 存放成功的回调
                 this.onResolvedCallbacks.push(()=>{
                     const reuslt = onFullFilled(this.value)
