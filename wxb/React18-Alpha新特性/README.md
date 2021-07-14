@@ -14,6 +14,10 @@
 - 批处理（Batching）是指 React 将多个状态更新合并到单个重新渲染中以获得更好的性能。
 - 优化 setState 同异步问题. React在合成事件 和 钩子函数中是异步执行(这里应该称为**批处理**)
 
+- v18实现「自动批处理」的关键在于两点：
+  >增加调度的流程
+  >不以全局变量executionContext为批处理依据，而是以更新的「优先级」为依据
+
   在 React 18 之前，我们只在 React 事件处理 handler 中批量更新。默认情况下，在 React 中，Promise、setTimeout、本地事件 handler 或任何其他事件中的更新是不会批处理的。
 
   在 React 18 的 createRoot 开始，所有的更新都会被自动，无论它们来自哪里。
@@ -29,3 +33,5 @@
   `ReactDOM.createRoot(rootElement).render(<App />);`
 
   `flushSync(() => {setCounter(c => c + 1);});`
+
+  [卡老师解析](https://cloud.tencent.com/developer/article/1843055)
