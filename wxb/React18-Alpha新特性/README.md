@@ -12,7 +12,7 @@
 #### <span id="1">一、什么是批处理</span>
 
 - 批处理（Batching）是指 React 将多个状态更新合并到单个重新渲染中以获得更好的性能。
-- 优化 setState 同异步问题. React在合成事件 [^footnote]和钩子函数中是异步执行(这里应该称为**批处理**)
+- 优化 setState 同异步问题. React在合成事件 [^1]和钩子函数中是异步执行(这里应该称为**批处理**)
 
   在 React 18 之前，我们只在 React 事件处理 handler 中批量更新。默认情况下，在 React 中，Promise、setTimeout、本地事件 handler 或任何其他事件中的更新是不会批处理的。
 
@@ -23,6 +23,7 @@
   通常情况下批处理是安全的，但有些代码可能依赖于在状态改变后立即从 DOM 中读取一些东西。对于这些用例，你可以使用 ReactDOM.flushSync() [^3] 来选择不进行批处理。
 
 
-  [^footnote]:合成事件: React 模拟原生 DOM 事件所有能力的一个事件对象，即浏览器原生事件的跨浏览器包装器
-  [^2]:```ReactDOM.createRoot(rootElement).render(<App />);```
-  [^3]:```flushSync(() => {setCounter(c => c + 1);});```
+  [^1]: 合成事件: React 模拟原生 DOM 事件所有能力的一个事件对象，即浏览器原生事件的跨浏览器包装器
+  [^2]: ```ReactDOM.createRoot(rootElement).render(<App />);```
+
+  [^3]: ```flushSync(() => {setCounter(c => c + 1);});```
