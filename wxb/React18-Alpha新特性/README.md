@@ -24,5 +24,7 @@
 
 
   [^1]: 合成事件: React 模拟原生 DOM 事件所有能力的一个事件对象，即浏览器原生事件的跨浏览器包装器
+
   [^2]: ```ReactDOM.createRoot(rootElement).render(<App />);```
+
   [^3]: ```flushSync(() => {setCounter(c => c + 1);});```
