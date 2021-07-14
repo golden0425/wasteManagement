@@ -23,8 +23,6 @@
   通常情况下批处理是安全的，但有些代码可能依赖于在状态改变后立即从 DOM 中读取一些东西。对于这些用例，你可以使用 ReactDOM.flushSync() [^3] 来选择不进行批处理。
 
 
-  [^1]: 合成事件: React 模拟原生 DOM 事件所有能力的一个事件对象，即浏览器原生事件的跨浏览器包装器
-
-  [^2]: ```ReactDOM.createRoot(rootElement).render(<App />);```
-
-  [^3]: ```flushSync(() => {setCounter(c => c + 1);});```
+  > 合成事件: React 模拟原生 DOM 事件所有能力的一个事件对象，即浏览器原生事件的跨浏览器包装器
+  > ```ReactDOM.createRoot(rootElement).render(<App />);```
+  > ```flushSync(() => {setCounter(c => c + 1);});```
