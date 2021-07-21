@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>file-slice</title>
+</head>
+
+<body>
+  <div>
+    <input id="uploadFile" type="file" onChange="handleFileChange()" />
+    <button onClick="handleUpload()">上传</button>
+  </div>
+</body>
+
+<script>
+  const SIZE = 1024 * 1024; //切片大小
+  const files = document.getElementById('uploadFile')
+  let file = null
+  let hashPercentage = 0
+
+  const handleFileChange = () => {
+    file = files.files[0]
+  }
+
+  const handleUpload = () => {
+    let fileHash = await this.calculateHash(fileChunkList);
+
+    if (!file) return
+    let fileChunk = createFileChunk(file)
+    file = fileChunk.map(({
+      file
+    }, index) => ({
+      chunk: file,
+      hash: `${file.name}-${index}`,
+      fileHash,
+      percentage: 0
+    }))
+    uploadChunks()
+  }
+
+  const uploadChunks = async () => {
+    const filename = file[0].hash.split('-')[0]
+    const requestList = file.map(({
+      chunk,
+      hash
+    }) => {
+      const formData = new FormData()
+      console.log(chunk)
+      formData.append("chunk", chunk);
+      formData.append("hash", hash);
+      formData.append("filename", filename);
+      return formData
+    }).map(async (
+      formData
+    ) => request({
+      url: "http://localhost:3000",
+      data: formData
+    }))
+    await Promise.all(requestList)
+  }
+
+  const createFileChunk = (file, size = SIZE) => {
+    const fileChunkList = []
+    let cur = 0
+    while (cur < file.size) {
+      fileChunkList.push({
+        file: file.slice(cur, cur + size)
+      });
+      cur += size;
+    }
+    return fileChunkList
+  }
+
+  const calculateHash = (fileChunkList) => {
+    return new Promise(resolve => {
+      // 添加 worker 属性
+      const worker = new Worker("/hash.js");
+      worker.postMessage({
+        fileChunkList
+      });
+      worker.onmessage = e => {
+        const {
+          percentage,
+          hash
+        } = e.data;
+        hashPercentage = percentage;
+        if (hash) {
+          resolve(hash);
+        }
+      };
+    });
+  }
+
+
+  const request = ({
+    url,
+    method = "post",
+    data,
+    headers = {},
+    requestList
+  }) => {
+    return new Promise(resolve => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, url);
+      Object.keys(headers).forEach(key =>
+        xhr.setRequestHeader(key, headers[key])
+      );
+      xhr.send(data);
+      xhr.onload = e => {
+        resolve({
+          data: e.target.response
+        });
+      };
+    });
+  }
+</script>
+
+</html>
