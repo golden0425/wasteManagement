@@ -1,13 +1,10 @@
 import os
 import sys
 
-msg = ''
-
 os.system("git pull")
 os.system("git fetch --all")
 os.system("git add .")
-msg = os.system( "input()" )
-os.system("git commit -m {msg}")
+os.system("git commit -m docs:08:11英语打卡")
 os.system("git push")
 
 
