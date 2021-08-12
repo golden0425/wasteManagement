@@ -22,4 +22,4 @@
       - Axios( 核心逻辑解析 ) [✔️]
 
     - 算法每日
-      - leetCode-20-valid-parentheses[√]
+      - leetCode-20-valid-parentheses[✔️]
