@@ -15,11 +15,11 @@
 ### 3.加油进入大厂
 
     - 学习代码更新
-      - file-slice 文件切片上传( 核心逻辑实现 ) [√]
-      - mini-Vue2( 核心逻辑实现 ) [√]
-      - Vue3-Reactive( 核心逻辑实现 ) [√]
-      - React18-Alpha新特性 [√]
-      - Axios( 核心逻辑解析 ) [√]
+      - file-slice 文件切片上传( 核心逻辑实现 ) [✔️]
+      - mini-Vue2( 核心逻辑实现 ) [✔️]
+      - Vue3-Reactive( 核心逻辑实现 ) [✔️]
+      - React18-Alpha新特性 [✔️]
+      - Axios( 核心逻辑解析 ) [✔️]
 
     - 算法每日
       - leetCode-20-valid-parentheses[√]
