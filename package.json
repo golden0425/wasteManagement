@@ -1,6 +1,6 @@
 {
   "name": "waste-management",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.js",
   "repository": "git@github.com:golden0425/wasteManagement.git",
   "author": "aXi <goldenwang0425@gmail.com>",
