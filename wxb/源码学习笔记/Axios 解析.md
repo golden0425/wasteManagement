@@ -1,6 +1,3 @@
-
-## Axios 解析
-
 ### Axios 的简介
 
 Axios 是一个基于 Promise 的 HTTP 客户端，拥有以下特性：
@@ -107,8 +104,9 @@ InterceptorManager.prototype.use = function use(fulfilled, rejected, options) {
   return this.handlers.length - 1;
 };
 ````
+**InterceptorManager关系图**
+![InterceptorManager关系图](https://user-images.githubusercontent.com/48218273/129293736-2a25e479-d20a-4d5d-815e-d80a7e1e73ce.png)
 
-**补图片**
 
 ##### 任务编排:
 
@@ -129,7 +127,7 @@ axios({
 通过前面的分析，我们已经知道 `axios` 对象对应的是 `Axios.prototype.request` 函数对象，该函数的具体实现如下：
 
 ````javascript
-// lib/core/Axios.js
+//   ##lib/core/Axios.js
 Axios.prototype.request = function request(config) {
   config = mergeConfig(this.defaults, config);
 
@@ -201,7 +199,7 @@ Axios.prototype.request = function request(config) {
   }
 
   return promise;
-  }
+
 
 
   var newConfig = config;
@@ -231,7 +229,11 @@ Axios.prototype.request = function request(config) {
 };
 ````
 
-**补图片 任务编排 任务调度 **
+**任务编排**
+![任务编排](https://user-images.githubusercontent.com/48218273/129293727-1a7bf4a4-7def-4aad-9af5-b7ae2a09be98.png)
+
+**任务调度**
+![任务调度](https://user-images.githubusercontent.com/48218273/129293735-5f1d63a6-b6fa-4ccd-8723-e5910217e318.png)
 
 下面我们来回顾一下 Axios 拦截器完整的使用流程：
 
@@ -266,7 +268,8 @@ axios({
 
 参考 Axios 拦截器的设计模型，我们就可以抽出以下通用的任务处理模型：
 
-**补图片**
+
+![任务处理模型](https://user-images.githubusercontent.com/48218273/129293733-15607f11-c659-4404-900e-ee349a0a9be5.png)
 
 --------
 
@@ -351,7 +354,8 @@ axios.get("/users").then(function (response) {
 });
 ````
 
-到这里我们已经介绍了 Axios 的拦截器与适配器，下面阿宝哥用一张图来总结一下 Axios 使用请求拦截器和响应拦截器后，请求的处理流程：
+到这里我们已经介绍了 Axios 的拦截器与适配器，下面用一张图来总结一下 Axios 使用请求拦截器和响应拦截器后，请求的处理流程：
 
-**补图**
+**处理流程**
+![处理流程](https://user-images.githubusercontent.com/48218273/129295276-3afa8339-bddc-4801-86a3-c01632595ade.png)
 
