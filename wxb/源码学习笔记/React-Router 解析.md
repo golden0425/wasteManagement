@@ -225,3 +225,140 @@ let history: HashHistory = {
   return history;
 `````
 
+大部分精髓就是这里。发现有多熟悉的伙伴！ => `push`、`replace`、`go`等等。有些其实都是`window`提供的。
+
+有些直接看代码就可以明白的就不解释了，比如`forward`，`back`。
+
+**push**
+
+`push`的源码，里面附带了一些会用到的函数。
+
+`````javascript
+// 就是简单处理一下返回值。
+function getNextLocation(to: To, state: State = null): Location {
+  return readOnly<Location>({
+    ...location,
+    ...(typeof to === 'string' ? parsePath(to) : to),
+    state,
+    key: createKey()
+  });
+}
+
+// 进行判断
+function allowTx(action: Action, location: Location, retry: () => void) {
+    return (
+      // 长度为0就返回true，长度大于0就调用函数，并传入参数。这个blockers等一下仔细探讨一下
+      !blockers.length || (blockers.call({ action, location, retry }), false)
+    );
+  }
+
+
+// 顾名思义获取state和url
+function getHistoryStateAndUrl(
+    nextLocation: Location,
+    index: number
+  ): [HistoryState, string] {
+    return [
+      {
+        usr: nextLocation.state,
+        key: nextLocation.key,
+        idx: index
+      },
+      // 看上面 有专门介绍
+      createHref(nextLocation)
+    ];
+  }
+
+// 返回一些关于location的信息 ( HashHistory 和 BrowserHistory 有些许不同 ) 
+function getIndexAndLocation(): [number, Location] {
+    let { pathname = '/', search = '', hash = '' } = parsePath(
+      window.location.hash.substr(1)
+    );
+    let state = globalHistory.state || {};
+    return [
+      state.idx,
+      readOnly<Location>({
+        pathname,
+        search,
+        hash,
+        state: state.usr || null,
+        key: state.key || 'default'
+      })
+    ];
+  }
+
+// 执行listeners内部的一些函数（也就是跳转），后面也会详细解读
+function applyTx(nextAction: Action) {
+    action = nextAction;
+    [index, location] = getIndexAndLocation();
+    listeners.call({ action, location });
+  }
+
+
+function push(to: To, state?: State) {
+    // 这里是一个枚举值
+    let nextAction = Action.Push;
+
+    let nextLocation = getNextLocation(to, state);
+    // 顾名思义，就是再来一次
+    function retry() {
+      push(to, state);
+    }
+
+    if (allowTx(nextAction, nextLocation, retry)) {
+      let [historyState, url] = getHistoryStateAndUrl(nextLocation, index + 1);
+
+      // TODO: Support forced reloading
+      // try...catch because iOS limits us to 100 pushState calls :/
+      try {
+        // MDN的地址: https://developer.mozilla.org/zh-CN/docs/Web/API/History/pushState
+        globalHistory.pushState(historyState, '', url);
+      } catch (error) {
+        // They are going to lose state here, but there is no real
+        // way to warn them about it since the page will refresh...
+        // MDN的地址: https://developer.mozilla.org/zh-CN/docs/Web/API/Location/assign
+        window.location.assign(url);
+      }
+
+      applyTx(nextAction);
+    }
+  }
+`````
+
+我在注释里面已经进行非常详细的解读了，用到的每个函数都有解释或者官方权威的url。
+
+总结一下：`history.push`的一个完整流程
+
+- 调用`history.pushState`
+- 错误由`window.location.assign`来处理
+- 执行一下`listeners`里面的函数
+
+是的，你没有看错，就这么简单，只是里面有很多调用的函数，我都截取出来一一解释，做到每行代码都理解，所以显得比较长，概括来说就是这么简单。
+
+重点来看一下`listen`和被调用的`createBrowserHistory`
+
+
+
+**replace**
+
+这里面用的函数，在前面的push都有解析，可以往上面去找找，就不多赘述了。
+
+````javascript
+  function replace(to: To, state?: State) {
+    let nextAction = Action.Replace;
+    let nextLocation = getNextLocation(to, state);
+    function retry() {
+      replace(to, state);
+    }
+
+    if (allowTx(nextAction, nextLocation, retry)) {
+      let [historyState, url] = getHistoryStateAndUrl(nextLocation, index);
+      // TODO: Support forced reloading
+      // 调用的方法 从 push 变成了 replaceState
+      // MDN的地址: https://developer.mozilla.org/zh-CN/docs/Web/API/History/replaceState
+      globalHistory.replaceState(historyState, '', url);
+      applyTx(nextAction);
+    }
+  }
+````
+
