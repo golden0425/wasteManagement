@@ -49,7 +49,7 @@ axios.interceptors.response.use(function (data) {
 
 **「任务注册、任务编排和任务调度」**  三个方面来分析 Axios 拦截器的实现。
 
-##### 任务注册:
+#### 任务注册:
 
 我们已经知道如何注册请求拦截器和响应拦截器，其中请求拦截器用于处理请求配置对象的子任务，而响应拦截器用于处理响应对象的子任务。要搞清楚任务是如何注册的，就需要了解 `axios` 和 `axios.interceptors` 对象。
 
@@ -108,7 +108,7 @@ InterceptorManager.prototype.use = function use(fulfilled, rejected, options) {
 ![InterceptorManager关系图](https://user-images.githubusercontent.com/48218273/129293736-2a25e479-d20a-4d5d-815e-d80a7e1e73ce.png)
 
 
-##### 任务编排:
+#### 任务编排:
 
 现在我们已经知道如何注册拦截器任务，但仅仅注册任务是不够，我们还需要对已注册的任务进行编排，这样才能确保任务的执行顺序。这里我们把完成一次完整的 HTTP 请求分为处理请求配置对象、发起 HTTP 请求和处理响应对象 3 个阶段
 
@@ -275,7 +275,7 @@ axios({
 
 ### HTTP 适配器的设计与实现
 
-##### 默认 HTTP 适配器
+#### 默认 HTTP 适配器
 
 Axios 同时支持浏览器和 Node.js 环境，对于浏览器环境来说，我们可以通过 `XMLHttpRequest` 或 `fetch` API 来发送 HTTP 请求，而对于 Node.js 环境来说，我们可以通过 Node.js 内置的 `http` 或 `https` 模块来发送 HTTP 请求。
 
@@ -300,7 +300,7 @@ module.exports = function dispatchRequest(config) {
 
 
 
-##### 自定义适配器
+#### 自定义适配器
 
 其实除了默认的适配器外，我们还可以自定义适配器。那么如何自定义适配器呢？这里我们可以参考 Axios 提供的示例：
 
