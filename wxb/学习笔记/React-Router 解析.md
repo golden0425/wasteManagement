@@ -1,8 +1,8 @@
 
 
-### React-Router 解析
+## React-Router 解析
 
-##### React-Router 的简介
+### React-Router 的简介
 
 React-Router 是一个基于 `Route`组件和由统一作者开发的 `History` 库来建立.
 
@@ -14,7 +14,7 @@ React-Router 是一个基于 `Route`组件和由统一作者开发的 `History` 
 
 
 
-#####React-Router-dom 的简介
+### React-Router-dom 的简介
 
 `react-router-dom`在`react-router`的基础上扩展了可操作`dom`的`api`。
 
@@ -28,7 +28,7 @@ React-Router 是一个基于 `Route`组件和由统一作者开发的 `History` 
 
 - 可直接 npm 安装 react-router-dom，使用其api。
 
-##### 常用 API
+### 常用 API
 
 ```javascript
 import { Switch, Route, Router } from 'react-router';
@@ -44,7 +44,7 @@ import { Swtich, Route, BrowserRouter, HashHistory, Link } from 'react-router-do
 
 ### 源码解析
 
-#### **HashHistory**
+#### HashHistory
 
 ```javascript
 // 原理其实就是在 Router 上又封装了一层 只是个中间商
@@ -64,7 +64,7 @@ class HashRouter extends React.Component {
 
 
 
-##### react-router
+#### react-router
 
 ````javascript
 // 整体实现相当于就是 创建一个 Context 提供数据
@@ -165,7 +165,7 @@ class Router extends React.Component {
 
 
 
-**总结:**Router这个组件主要就是将一些数据进行存储。存到`Context`，之间不乏一些特殊情况的判断，比如子组件渲染比父组件早，以及`Redirect`的情况的处理。在卸载的时候要移除对`history`的监听。
+**总结**:Router这个组件主要就是将一些数据进行存储。存到`Context`，之间不乏一些特殊情况的判断，比如子组件渲染比父组件早，以及`Redirect`的情况的处理。在卸载的时候要移除对`history`的监听。
 
 子组件作为消费者，就可以对页面进行修改，跳转，获取这些数值。
 
@@ -181,7 +181,7 @@ class Router extends React.Component {
 
 
 
-**createHashHistory**
+#### createHashHistory
 
 我们之前用到的`createHashHistory`，他其实是返回的一个对象，这个对象里面有我们常用的一些方法。
 
@@ -235,7 +235,7 @@ let history: HashHistory = {
 
 
 
-**push**
+#### push
 
 `push`的源码，里面附带了一些会用到的函数。
 
@@ -345,7 +345,7 @@ function push(to: To, state?: State) {
 
 
 
-**replace**
+#### replace
 
 这里面用的函数，在前面的push都有解析，可以往上面去找找。
 
@@ -370,7 +370,7 @@ function push(to: To, state?: State) {
 
 
 
-**listen**
+#### listen
 
 在`history`返回的`listen`是一个函数。这个函数我们之前在react-router的源码中发现，他是在构造函数和卸载的时候会用到
 
@@ -386,7 +386,7 @@ function push(to: To, state?: State) {
 
 
 
-**createEvents**
+#### createEvents
 
 ````javascript
 function createEvents<F extends Function>(): Events<F> {
@@ -433,7 +433,7 @@ function createEvents<F extends Function>(): Events<F> {
 
 
 
-**block**
+#### block
 
 在看 listeners 实现的时候发现了一个 blockers 也调用了 createEvents 方法
 
@@ -445,7 +445,7 @@ function createEvents<F extends Function>(): Events<F> {
 
 
 
-**具体核心原理**
+#### 具体核心原理
 
 先秀一下源码。history的核心原理就是这个。先别被这么多行代码唬到了，很多都是我们在之前的push里面有解释的,主要的逻辑还是通过 popstate 和 hashchange来监听路由的变化然后，执行回调函数
 
@@ -540,7 +540,7 @@ window.location.hash
 
 
 
-**Switch**
+#### Switch
 
 ````javascript
 class Switch extends React.Component {
@@ -594,7 +594,7 @@ class Switch extends React.Component {
 
 
 
-**matchPath**
+#### matchPath
 
 matchPath 函数也是由 react-router export 出去的函数，我们可以用来获得某个 url 中的指定的参数。
 
@@ -651,7 +651,7 @@ function matchPath(pathname, options = {}) {
 
 
 
-**Route**
+#### Route
 
 ````javascript
 class Route extends React.Component {
@@ -729,12 +729,12 @@ class Route extends React.Component {
   - 从源码中可以看出，children 的优先级是高于 component，而且可以是一个组件，也可以是一个函数，children 没有获得 router 的 props。
   - children 有一个非常特殊的地方在于，当路由不匹配且 children 是一个函数的时候，会执行 children 方法，这就给了设计很大的灵活性。
 
-- render
+- **render**
   - render 必须是一个函数，优先级是最低的，当匹配成功的时候，执行这个函数。
 
 
 
-**Prompt**
+#### Prompt
 
 Prompt 用于路由切换提示。这在某些场景下是非常有用的，比如用户在某个页面修改数据，离开时，提示用户是否保存，Prompt 组件有俩个属性：
 
@@ -792,7 +792,7 @@ export default Prompt;
 
 
 
-**Redirect**
+#### Redirect
 
 Redirect 与其说是一个组件，不如说是有组件封装的一组方法，该组件在 componentDidMount 生命周期内，通过调用 history API 跳转到到新位置，默认情况下，新位置将覆盖历史堆栈中的当前位置。
 
@@ -875,7 +875,7 @@ export default Redirect;
 
 
 
-**Lifecycle**
+#### Lifecycle
 
 Lifecycle 不 render 任何页面，只有生命周期函数，Lifecycle 提供了 onMount， onUpdate， onUnmount 三个生命周期函数。
 
