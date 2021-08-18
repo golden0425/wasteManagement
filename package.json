@@ -6,6 +6,6 @@
   "author": "aXi <goldenwang0425@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "git": "python3 ./gitPush.py"
+    "git": "python3 ./git.py"
   }
 }

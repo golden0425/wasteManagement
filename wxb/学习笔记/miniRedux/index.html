@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="./redux.js" ></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+</head>
+
+<body>
+  <div id="app">
+    <p id="counter-value">{{num}}</p>
+    <button @click='add(1)'>+</button>
+    <button @click='add(2)'>-</button>
+    <div>{{message}}</div>
+  </div>
+</body>
+
+<script>
+  new Vue({
+    el: '#app',
+    data: {
+      message: 'Hello Vue.js!',
+      num: 0,
+      store: ''
+
+    },
+    methods: {
+      add(type) {
+        console.log(this.store.getState())
+        switch (type) {
+          case 1:
+            this.store.dispatch({
+              type: 'INCREMENT'
+            });
+            this.num = this.store.getState()
+            break;
+          case 2:
+            this.store.dispatch({
+              type: 'DECREMENT'
+            });
+            this.num = this.store.getState()
+            break;
+          default:
+            break;
+        }
+      },
+      redux() {
+        console.log(1)
+      }
+    },
+
+    created() {
+      function render(state = 0, action) {
+        switch (action.type) {
+          case 'INCREMENT':
+            return state + 1;
+          case 'DECREMENT':
+            if (state === 0) {
+              return 0
+            }
+            return state - 1;
+          default:
+            return state;
+        }
+      }
+      console.log(Redux)
+      const store = Redux.createStore(render);
+      this.store = store
+      console.log(store)
+
+    },
+  })
+</script>
+
+</html>
