@@ -36,6 +36,7 @@ var lengthOfLongestSubstring = function(s) {
   //       0
   //     )
   // )
+
   let i = 0, //查找初始值
     res = 0, //返回的结果
     n = 0 // 重复值所在位置
