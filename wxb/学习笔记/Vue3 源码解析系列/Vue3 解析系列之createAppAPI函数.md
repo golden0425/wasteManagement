@@ -1,4 +1,4 @@
-## Vue3 解析系列之createAppAPI函数
+## Vue3 解析系列之 createAppAPI 函数
 
 > 前言:本文是基于 Vue 3.0.5 进行解析,主要用于个人学习梳理流程.也是第一次正儿八经的写文章.如果不对请指正.
 
@@ -16,7 +16,9 @@
 话不多说上源码
 
 **createAppAPI**
+
 ```javascript
+// packages/runtime-core/src/apiCreateApp.ts
 export function createAppAPI<HostElement>(
   render: RootRenderFunction,
   hydrate?: RootHydrateFunction
@@ -26,11 +28,14 @@ export function createAppAPI<HostElement>(
   }
 }
 ```
+
 其实 createAppAPI 只是 createApp 实现的一个包装器.继续往下看主要实现 createApp 方法都干了什么.
 
 **createApp**
+
 ```javascript
 // 省略部分 DEV 环境代码
+// packages/runtime-core/src/apiCreateApp.ts
 return function createApp(rootComponent, rootProps = null) {
   // 上下生成工厂函数 主要的用处就是初始化一些数据 见后续
   const context = createAppContext()
@@ -161,9 +166,10 @@ return app
 }
 ```
 
+**Vue 上下文创建 createAppContext **
 
-**Vue上下文创建 createAppContext **
 ```javascript
+// packages/runtime-core/src/apiCreateApp.ts
 export function createAppContext(): AppContext {
   return {
     app: null as any,
@@ -187,7 +193,6 @@ export function createAppContext(): AppContext {
 
 **总结**
 
-在 `createAppAPI`函数内我们发现了其主要的功能就是创建了一个 **Vue 的实例** .并对当前Vue实例进行全局数据和上下文进行绑定.最终通过调用 `mount` 的方法进行元素挂载
+在 `createAppAPI`函数内我们发现了其主要的功能就是创建了一个 **Vue 的实例** .并对当前 Vue 实例进行全局数据和上下文进行绑定.最终通过调用 `mount` 的方法进行元素挂载
 
 > 本文是 Vue3 解析的第一篇.后续将进行 **Vue3 挂载阶段的解析** .
-

@@ -10,13 +10,14 @@
 
 **前言**
 
-在上一期 Vue3 解析系列中我们对 **`createAppAPI函数`** 进行了解析,但是并没有对核心方法 **`mount` 挂载逻辑** 进行解析.本期会分 ** `创建VNode` , `元素渲染(render)` , `effect收集` 等几个部分** 来对于**初始化元素渲染**进行解析.
+在上一期 Vue3 解析系列中我们对 **`createAppAPI函数`** 进行了解析,但是并没有对核心方法 **`mount` 挂载逻辑** 进行解析.本期会分 ** `创建VNode` , `渲染函数(render)` , `effect收集` 等几个部分** 来对于**初始化元素渲染**进行解析.
 
 话不多说上源码:
 
 先进入到 `mount` 函数内部.发现了里面有 2 个关键函数 `createVNode`,`render`,这两个函数也可以说是 Vue 的核心逻辑.具体是做什么的继续往下看.
 
 ```javascript
+  // packages/runtime-core/src/apiCreateApp.ts
    mount(rootContainer: HostElement, isHydrate?: boolean): any {
     // 判断下 isMounted 挂载状态
     if (!isMounted) {
@@ -69,6 +70,7 @@
 
 ```javascript
 // 省略部分 DEV 环境代码
+// packages/runtime-core/src/vnode.ts
 export const createVNode = _createVNode
 
 // TODO 返回创建完成后的vnode节点
@@ -195,6 +197,7 @@ function _createVNode(
 在创建 VNode 节点的过程中会通过 **按位或** 把子节点的类型赋予到父节点的类型 type 上.便于后续渲染时对子节点的操作
 
 ```javascript
+// packages/runtime-core/src/vnode.ts
 normalizeChildren(vnode: VNode, children: unknown) {
   let type = 0
   const { shapeFlag } = vnode
@@ -273,3 +276,446 @@ normalizeChildren(vnode: VNode, children: unknown) {
 - 在创建 vnode 节点 过程中对传入的节点的子节点也进行了 节点类型判断处理.
 
 ---
+
+#### 渲染函数
+
+**render**
+`render 函数` 涉及到 `vue` 里的一个核心思想:**虚拟 DOM(VNode)**
+`Vue` 通过建立一个**虚拟 DOM**来追踪自己要如何改变**真实 DOM**,并通过 `render函数` 生成**真实 DOM**.
+
+```javascript
+// packages/runtime-core/src/renderer.ts
+const render: RootRenderFunction = (vnode, container) => {
+  //TODO 不存在虚拟 DOM 走的是卸载逻辑
+  if (vnode == null) {
+    // 在根实例上存在 _vnode
+    if (container._vnode) {
+      // 进行卸载
+      unmount(container._vnode, null, null, true)
+    }
+  } else {
+    // TODO 初始化 和 更新 过程. 核心逻辑
+    patch(container._vnode || null, vnode, container)
+  }
+  // 后续补足
+  flushPostFlushCbs()
+  // 在根容器对象上添加当前需要挂载的 vnode
+  container._vnode = vnode
+}
+```
+
+通过 `render` 函数我们发现主要的核心逻辑在 `patch` 函数内.
+
+**patch**
+
+```javascript
+ // packages/runtime-core/src/renderer.ts
+ const patch: PatchFn = (
+    n1,  // 新 vnode
+    n2,  // 旧 vnode
+    container,  // 根容器
+    anchor = null,
+    parentComponent = null,
+    parentSuspense = null,
+    isSVG = false,
+    optimized = false
+  ) => {
+    // TODO 前后节点不同 vue 是直接卸载之前的然后重新渲染新的，不会考虑可能的子节点复用
+    // isSameVNodeType = ( n1, n2 ) => n1.type === n2.type && n1.key === n2.key
+    // 从 isSameVNodeType 函数就可以看出平时 key是唯一值 对于元素比较来说是多么重要.
+    if (n1 && !isSameVNodeType(n1, n2)) {
+      anchor = getNextHostNode(n1)
+      unmount(n1, parentComponent, parentSuspense, true)
+      n1 = null
+    }
+    // 特殊的标记 PatchFlags.BAIL , 不进行 diff 算法
+    if (n2.patchFlag === PatchFlags.BAIL) {
+      optimized = false
+      n2.dynamicChildren = null
+    }
+    // 在创建 vnode 的时候会去判断当前组件的类型
+    // 初始化时 因为传入的是个对象 所以赋值为 状态组件 所以相对应的会去触发 processComponent 方法
+    const { type, ref, shapeFlag } = n2
+    switch (type) {
+      // 文本节点类型
+      case Text:
+        processText(n1, n2, container, anchor)
+        break
+      // 注释节点
+      case Comment:
+        processCommentNode(n1, n2, container, anchor)
+        break
+      // 静态节点 在创建 VNode 的时候如果没有根组件的时候 元素类型就会被标记为静态节点
+      case Static:
+        if (n1 == null) {
+          mountStaticNode(n2, container, anchor, isSVG)
+        } else if (__DEV__) {
+          patchStaticNode(n1, n2, container, isSVG)
+        }
+        break
+      case Fragment:
+        processFragment(
+          n1,
+          n2,
+          container,
+          anchor,
+          parentComponent,
+          parentSuspense,
+          isSVG,
+          optimized
+        )
+        break
+      default:
+        if (shapeFlag & ShapeFlags.ELEMENT) {
+          // 处理 element 节点类型
+          processElement(
+            n1,
+            n2,
+            container,
+            anchor,
+            parentComponent,
+            parentSuspense,
+            isSVG,
+            optimized
+          )
+        } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          // 处理 有状态组件 和 功能组件(函数组件)
+          processComponent(
+            n1,
+            n2,
+            container,
+            anchor,
+            parentComponent,
+            parentSuspense,
+            isSVG,
+            optimized
+          )
+        } else if (shapeFlag & ShapeFlags.TELEPORT) {
+          // Vue3 新增 TELEPORT 组件
+          ;(type as typeof TeleportImpl).process(
+            n1 as TeleportVNode,
+            n2 as TeleportVNode,
+            container,
+            anchor,
+            parentComponent,
+            parentSuspense,
+            isSVG,
+            optimized,
+            internals
+          )
+        } else if (__FEATURE_SUSPENSE__ && shapeFlag & ShapeFlags.SUSPENSE) {
+           // Vue3 新增 SUSPENSE 组件
+          ;(type as typeof SuspenseImpl).process(
+            n1,
+            n2,
+            container,
+            anchor,
+            parentComponent,
+            parentSuspense,
+            isSVG,
+            optimized,
+            internals
+          )
+        }
+    }
+
+    // 设置 ref 逻辑 ( 后续补足 初始化暂时不涉及 )
+    if (ref != null && parentComponent) {
+      setRef(ref, n1 && n1.ref, parentSuspense, n2)
+    }
+  }
+```
+
+**总结**
+其实别看`patch`函数这么长做的功能其实就以下几点
+
+1. 判断新旧 VNode 是否一致,不一致**直接卸载旧的 VNode**,然后重新渲染新的,**不会考虑可能的子节点复用**.**( 就是我们常说的同级比较 )**
+2. 根据创建 VNode 时判断的**节点类型(type)**和**节点类型标识(ShapeFlags)**,进入对应的渲染函数.
+3. setRef( 后续补足 初始化暂时不涉及 )
+
+接下来看看怎么进行组件渲染的应该也是最关心的逻辑了.
+
+**processComponent**
+
+```javascript
+  // packages/runtime-core/src/renderer.ts
+  // 组件渲染
+  const processComponent = (
+    n1: VNode | null,   // 新 vnode
+    n2: VNode,          // 旧 vnode
+    container: RendererElement,  //根容器
+    anchor: RendererNode | null,
+    parentComponent: ComponentInternalInstance | null,
+    parentSuspense: SuspenseBoundary | null,
+    isSVG: boolean,
+    optimized: boolean
+  ) => {
+    //TODO 没有新 vnode 时 就是挂载组件,否者会进入更新逻辑
+    if (n1 == null) {
+      // 判断是否是 keep-alive
+      if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
+        // 获取父级
+        // activate keep-alive 方法 后续讲到 KeepAliveContext 再抽出来单独说
+        ;(parentComponent!.ctx as KeepAliveContext).activate(
+          n2,
+          container,
+          anchor,
+          isSVG,
+          optimized
+        )
+      } else {
+        //TODO 挂载组件初始化组件
+        mountComponent(
+          n2,
+          container,
+          anchor,
+          parentComponent,
+          parentSuspense,
+          isSVG,
+          optimized
+        )
+      }
+    } else {
+      //TODO 否者会进入更新逻辑
+      updateComponent(n1, n2, optimized)
+    }
+  }
+```
+
+**总结**
+通过是否存在 **新 vnode** 来判断是否是进入 **初始化逻辑(mount)** 还是 **更新逻辑(update)**
+
+**mountComponent**
+
+挂载过程我准备分 3 个阶段来说
+
+- [初始化组件实例](#createComponentInstance)
+- [安装组件:组件初始化](#setupComponent)
+- 安装渲染函数
+
+```javascript
+// 省略部分 DEV 环境代码
+// packages/runtime-core/src/renderer.ts
+const mountComponent: MountComponentFn = (
+    initialVNode,  // 初始化 vnode  其实就是 根组件节点生成的 VNode ( 有点拗口. )
+    container,  // 根容器
+    anchor,
+    parentComponent,
+    parentSuspense,
+    isSVG,
+    optimized
+  ) => {
+    // TODO 1.初始化组件实例
+    const instance: ComponentInternalInstance = (initialVNode.component = createComponentInstance(
+      initialVNode,
+      parentComponent,
+      parentSuspense
+    ))
+
+    // inject renderer internals for keepAlive
+    // 判断是否是 keepAlive 元素 注入当前元素实例
+    if (isKeepAlive(initialVNode)) {
+      // 方便后续直接调用
+      ;(instance.ctx as KeepAliveContext).renderer = internals
+    }
+
+    //TODO 2.安装组件:组件初始化
+    // 1.实际就是对 props 和 slots 进行处理
+    // 2.劫持了上下文
+    // 3.setup(effect) 执行后返回的结果 并且在内部进行错误捕获
+    setupComponent(instance)
+
+    // setup() is async. This component relies on async logic to be resolved
+    // before proceeding
+    if (__FEATURE_SUSPENSE__ && instance.asyncDep) {
+      parentSuspense && parentSuspense.registerDep(instance, setupRenderEffect)
+      // Give it a placeholder if this is not hydration
+      // TODO handle self-defined fallback
+      if (!initialVNode.el) {
+        const placeholder = (instance.subTree = createVNode(Comment))
+        processCommentNode(null, placeholder, container!, anchor)
+      }
+      return
+    }
+
+    // TODO 3.安装渲染函数
+    setupRenderEffect(
+      instance,
+      initialVNode,
+      container,
+      anchor,
+      parentSuspense,
+      isSVG,
+      optimized
+    )
+  }
+
+```
+
+<span id="createComponentInstance">**createComponentInstance**</span>
+
+createComponentInstance 比较简单,进行了创建**实例并绑定上下文和根节点**,最后注册 emit 方法.
+
+```javascript
+// packages/runtime-core/src/component.ts
+export function createComponentInstance(
+  vnode: VNode,
+  parent: ComponentInternalInstance | null,
+  suspense: SuspenseBoundary | null
+) {
+  const type = vnode.type as ConcreteComponent
+  //  父级节点上下文 ? 父级节点上下文 : 当前节点上下文  || 创建新节点
+  const appContext =
+    (parent ? parent.appContext : vnode.appContext) || emptyAppContext
+  // 实例对象
+  const instance: ComponentInternalInstance = {
+    // ...省略实例对象属性  感兴趣的可以去看看源码
+  }
+
+  // 绑定上下文
+  instance.ctx = { _: instance }
+
+  // 实例的根节点如果没有父级就是自身
+  instance.root = parent ? parent.root : instance
+  // 注册 emit 方法
+  instance.emit = emit.bind(null, instance)
+  //TODO 阿宝哥的 emit 的实现解析  https://www.imooc.com/article/316907
+
+  return instance
+}
+
+
+```
+
+<span id="setupComponent">**setupComponent**</span>
+
+- 实际就是对 props 和 slots 进行处理
+- 劫持了上下文
+- setup(effect) 执行后返回的结果 并且在内部进行错误捕获
+
+```javascript
+// packages/runtime-core/src/component.ts
+export function setupComponent(
+  instance: ComponentInternalInstance,
+  isSSR = false
+) {
+  // SSR
+  isInSSRComponentSetup = isSSR
+
+  const { props, children, shapeFlag } = instance.vnode
+  // 判断是否是状态组件 按位与  & 4
+  const isStateful = shapeFlag & ShapeFlags.STATEFUL_COMPONENT
+  // 初始化
+  // initProps -> setFullProps -> normalizePropsOptions <-> normalizePropsOptions
+  // 细节逻辑
+  // 根据你组件的props声明来把属性放到 props 或者 attrs 里面
+  initProps(instance, props, isStateful, isSSR)
+  initSlots(instance, children)
+  // 判断是否进行状态设置 具体做了什么看 setupStatefulComponent 方法
+  const setupResult = isStateful
+    ? setupStatefulComponent(instance, isSSR)
+    : undefined
+  isInSSRComponentSetup = false
+  return setupResult
+}
+```
+
+
+**setupStatefulComponent**
+
+`````javascript
+// packages/runtime-core/src/component.ts
+function setupStatefulComponent(
+  instance: ComponentInternalInstance,
+  isSSR: boolean
+) {
+  const Component = instance.type as ComponentOptions
+
+  if (__DEV__) {
+    if (Component.name) {
+      validateComponentName(Component.name, instance.appContext.config)
+    }
+    if (Component.components) {
+      const names = Object.keys(Component.components)
+      for (let i = 0; i < names.length; i++) {
+        validateComponentName(names[i], instance.appContext.config)
+      }
+    }
+    if (Component.directives) {
+      const names = Object.keys(Component.directives)
+      for (let i = 0; i < names.length; i++) {
+        validateDirectiveName(names[i])
+      }
+    }
+  }
+  // 0. create render proxy property access cache
+  instance.accessCache = Object.create(null)
+  // 1. create public instance / render proxy
+  // also mark it raw so it's never observed
+  // 首先我们创建了instance.proxy，这个其实就是我们在使用 option api 的时候的this，所以这里要创建一个 proxy，在你调用this.xxx的时候他才能响应式得作出反应。
+  // 劫持了上下文
+  instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandlers)
+  if (__DEV__) {
+    exposePropsOnRenderContext(instance)
+  }
+  // 2. call setup()
+  // Vue 3.0 写法
+  const { setup } = Component
+  if (setup) {
+    // 创建上下文  setup 内可以直接访问属性 context
+    // setup 参数大于 1 时 创建 createSetupContext
+    const setupContext = (instance.setupContext =
+      setup.length > 1 ? createSetupContext(instance) : null)
+
+    currentInstance = instance
+
+    /**
+     * 在执行setup的时候，我们的 state 其实是一个 reactive 的对象，
+     * 后续我们调用state.a的时候，其实就是把当前的方法上下文(setup 方法)作为state对象的依赖进行保存，
+     * 也就是说以后state.a修改的时候setup会重新调用！这自然是我们不希望看到的，
+     * 因为其实setup只是创建这些响应式对象，其本身自然不应该依赖于他们的变化，
+     * 那么pauseTracking就是告诉响应式系统，接下去我们执行的方法就不要记录依赖了
+     * 等到 setup 执行完毕后再进行响应式追踪
+     */
+    // TODO 模糊 暂停响应式
+    pauseTracking()
+    //TODO 执行 setup
+    // setup(effect) 执行后返回的结果 并且在内部进行错误捕获
+    const setupResult = callWithErrorHandling(
+      setup,
+      instance,
+      ErrorCodes.SETUP_FUNCTION,
+      [__DEV__ ? shallowReadonly(instance.props) : instance.props, setupContext]
+    )
+    // TODO 模糊 重置响应式
+    resetTracking()
+    // 执行完毕后置空
+    currentInstance = null
+
+    // 异步渲染
+    if (isPromise(setupResult)) {
+      if (isSSR) {
+        // return the promise so server-renderer can wait on it
+        return setupResult.then((resolvedResult: unknown) => {
+          handleSetupResult(instance, resolvedResult, isSSR)
+        })
+      } else if (__FEATURE_SUSPENSE__) {
+        // async setup returned Promise.
+        // bail here and wait for re-entry.
+        instance.asyncDep = setupResult
+      } else if (__DEV__) {
+        warn(
+          `setup() returned a Promise, but the version of Vue you are using ` +
+            `does not support it yet.`
+        )
+      }
+    } else {
+      handleSetupResult(instance, setupResult, isSSR)
+    }
+  } else {
+    // TODO 是不是兼容 vue 2?
+    finishComponentSetup(instance, isSSR)
+  }
+}
+`````
+
