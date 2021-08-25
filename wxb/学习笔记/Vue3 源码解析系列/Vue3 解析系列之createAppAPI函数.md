@@ -8,13 +8,14 @@
 
 #### <span id="1">一、createAppAPI 做了什么</span>
 
-抛出 2 个问题:
+**前言**
+抛出 1 个问题:
 
 - 为什么 **Vue3** 要通过 `createApp({setup(){}}).mount('#app')` 这种方式函数方式去执行呢,而不是沿用 **Vue2** 通过`new Vue()` 的方式呢?
-- 这样做有什么好处呢?
 
 话不多说上源码
 
+**createAppAPI**
 ```javascript
 export function createAppAPI<HostElement>(
   render: RootRenderFunction,
@@ -25,9 +26,9 @@ export function createAppAPI<HostElement>(
   }
 }
 ```
-
 其实 createAppAPI 只是 createApp 实现的一个包装器.继续往下看主要实现 createApp 方法都干了什么.
 
+**createApp**
 ```javascript
 // 省略部分 DEV 环境代码
 return function createApp(rootComponent, rootProps = null) {
@@ -48,12 +49,14 @@ return function createApp(rootComponent, rootProps = null) {
   // 省略部分代码
   // 插件安装
   use(plugin: Plugin, ...options: any[]) {
-    // vue2 Vue.use(vueRouter)
-    // vue3 app.use(vueRouter)
-    //  TODO 优点:
-    // 1.全局配置会污染
-    // 2.treeshaking 摇树优化
-    // 3.语义化
+    /*
+    * TODO 优点: ( 解释了开头提出的问题 )
+    * vue2 Vue.use(vueRouter)
+    * vue3 app.use(vueRouter)
+    * 1.全局配置会污染
+    * 2.treeshaking 摇树优化
+    * 3.语义化
+    */
 
     // installedPlugins是个 set 对象 key唯一
 
@@ -160,7 +163,6 @@ return app
 
 
 **Vue上下文创建 createAppContext **
-
 ```javascript
 export function createAppContext(): AppContext {
   return {

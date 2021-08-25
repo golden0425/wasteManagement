@@ -24,7 +24,7 @@
       - 前端长列表渲染优化( 实践 ) [✔️]
       - 记一次with的用法 [✔️]
       - Vue3 []
-        - Vue3 解析系列之createAppAPI函数[✔️]
+        - Vue3 解析系列之 createAppAPI 函数[✔️]
       - qiankun微服务框架( 核心逻辑了解 ) []
 
 
