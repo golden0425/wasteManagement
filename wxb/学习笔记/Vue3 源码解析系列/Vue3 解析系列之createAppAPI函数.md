@@ -1,4 +1,4 @@
-## Vue3 解析
+## Vue3 解析系列之createAppAPI函数
 
 > 前言:本文是基于 Vue 3.0.5 进行解析,主要用于个人学习梳理流程.也是第一次正儿八经的写文章.如果不对请指正.
 
@@ -130,32 +130,26 @@ return function createApp(rootComponent, rootProps = null) {
       app._container = rootContainer
       // for devtools and telemetry
       ;(rootContainer as any).__vue_app__ = app
-      //
+      // 返回 Vue 的实例
       return vnode.component!.proxy
     }
   },
   // 卸载
   unmount() {
+    // render 函数 第一个参数是 vnode, 会进行判断如果没有 vnode 并且在根实例上存在 _vnode,就会调用 unmount 方法进行卸载
     if (isMounted) {
       render(null, app._container)
-      if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
-        devtoolsUnmountApp(app)
-      }
-    } else if (__DEV__) {
-      warn(`Cannot unmount an app that is not mounted.`)
     }
   },
+  // 全局的 provide
   provide(key, value) {
-    if (__DEV__ && (key as string | symbol) in context.provides) {
-      warn(
-        `App already provides property with key "${String(key)}". ` +
-          `It will be overwritten with the new value.`
-      )
-    }
-    // TypeScript doesn't allow symbols as index type
-    // https://github.com/Microsoft/TypeScript/issues/24587
+    /*
+     * 设置一个可以被注入到应用范围内所有组件中的值。组件应该使用 inject 来接收提供的值。
+     * Note
+     * provide 和 inject 绑定不是响应式的。这是有意为之。
+     * 不过，如果你向下传递一个响应式对象，这个对象上的 property 会保持响应式。
+    */
     context.provides[key as string] = value
-
     return app
   }
 })
@@ -163,6 +157,9 @@ return function createApp(rootComponent, rootProps = null) {
 return app
 }
 ```
+
+
+**Vue上下文创建 createAppContext **
 
 ```javascript
 export function createAppContext(): AppContext {
@@ -185,3 +182,10 @@ export function createAppContext(): AppContext {
   }
 }
 ```
+
+**总结**
+
+在 `createAppAPI`函数内我们发现了其主要的功能就是创建了一个 **Vue 的实例** .并对当前Vue实例进行全局数据和上下文进行绑定.最终通过调用 `mount` 的方法进行元素挂载
+
+> 本文是 Vue3 解析的第一篇.后续将进行 **Vue3 挂载阶段的解析** .
+
