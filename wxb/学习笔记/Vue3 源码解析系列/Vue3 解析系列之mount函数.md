@@ -46,9 +46,9 @@
 
 ---
 
-#### 创建VNode阶段
+### 创建VNode阶段
 
-**createVNode**
+#### createVNode
 
 看函数名也能知道这个函数是拿来创建 `VNode` 的.经常在面试的时候会被面试官问到什么是 `VNode` 呢,有什么作用呢,为什么需要 VNode? 不瞒大家说我也是被吊打的哪一位.
 
@@ -186,7 +186,7 @@ function _createVNode(
 }
 ```
 
-**normalizeChildren**
+#### normalizeChildren
 
 在创建 VNode 节点的过程中会通过 **按位或** 把子节点的类型赋予到父节点的类型 type 上.便于后续渲染时对子节点的操作
 
@@ -271,9 +271,9 @@ normalizeChildren(vnode: VNode, children: unknown) {
 
 ---
 
-#### 组件初始化挂载阶段
+### 组件初始化挂载阶段
 
-**render**
+#### render
 
 `render 函数` 涉及到 `vue` 里的一个核心思想:**虚拟 DOM(VNode)**
 `Vue` 通过建立一个**虚拟 DOM**来追踪自己要如何改变**真实 DOM**,并通过 `render函数` 生成**真实 DOM**.
@@ -301,7 +301,7 @@ const render: RootRenderFunction = (vnode, container) => {
 
 通过 `render` 函数我们发现主要的核心逻辑在 `patch` 函数内.
 
-**patch**
+#### patch
 
 ```javascript
  // packages/runtime-core/src/renderer.ts
@@ -429,7 +429,7 @@ const render: RootRenderFunction = (vnode, container) => {
 
 接下来看看怎么进行组件渲染的应该也是最关心的逻辑了.
 
-**processComponent**
+#### processComponent
 
 ```javascript
   // packages/runtime-core/src/renderer.ts
@@ -480,7 +480,7 @@ const render: RootRenderFunction = (vnode, container) => {
 
 通过是否存在 **新 vnode** 来判断是否是进入 **初始化逻辑(mount)** 还是 **更新逻辑(update)**
 
-**mountComponent**
+#### mountComponent
 
 挂载过程分3个阶段
 - [初始化组件实例 - createComponentInstance](#createComponentInstance)
@@ -614,7 +614,7 @@ export function setupComponent(
 }
 ```
 
-**setupStatefulComponent**
+#### setupStatefulComponent
 
 着重理解为什么要在 setup 函数执行前为什么要调用 pauseTracking 函数.
 
@@ -704,7 +704,7 @@ function setupStatefulComponent(
 顺着逻辑我们再去看看 handleSetupResult 函数 到底做了什么吧
 
 
-**handleSetupResult**
+#### handleSetupResult
 
 通过 setupStatefulComponent 函数 我们知道了该函数主要的作用是对于 setup 函数 执行完成后的结果进行操作.
 
@@ -739,7 +739,7 @@ export function handleSetupResult(
 
 主要的逻辑:根据 setup(effect) 执行后返回的结果 来进行区分在当前实例上挂载 render 属性 或 代理后的 setupState 属性,最终执行 finishComponentSetup 函数
 
-**finishComponentSetup**
+#### finishComponentSetup
 
 ```javascript
 // packages/runtime-core/src/component.ts
@@ -902,7 +902,7 @@ function finishComponentSetup(
 - mounted 时会通过传入的实例创建对应的树,并且通过 patch 方法对整棵树进行渲染
 - update 时会通过传入的实例创建对应的新的树,并把新树和老树进行比对找出差异
 
-**effect**
+#### effect
 
 来看看 effect 到底做了什么
 
@@ -932,7 +932,7 @@ export function effect<T = any>(
 通过传入的 componentEffect (其实就是包裹着渲染函数的回调函数) 和 options 生成最终的effect(副作用函数).并且执行
 整个过程其实可以理解为  effect() => 组件渲染
 
-**createReactiveEffect**
+#### createReactiveEffect
 
 创建 effect 对象
 
