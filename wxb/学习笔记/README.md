@@ -8,4 +8,4 @@
 - React-router-dom [✔️]
 - Vue3 []
   - Vue3 解析系列之 createAppAPI 函数[✔️]
-  - Vue3 解析系列之 mount 函数[]
+  - Vue3 解析系列之 mount 函数[✔️]
