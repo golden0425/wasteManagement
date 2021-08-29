@@ -2,15 +2,9 @@
 
 > 前言:本文是基于 Vue 3.0.5 进行解析,主要用于个人学习梳理流程.也是第一次正儿八经的写文章.如果不对请指正.
 
-### 目录
-
-1.  [mount](#2)
-
-#### <span id="2">二、mount 做了什么</span>
-
 **前言**
 
-在上一期 Vue3 解析系列中我们对 **`createAppAPI函数`** 进行了解析,但是并没有对核心方法 **`mount` 挂载逻辑** 进行解析.本期会分 ** `创建VNode` , `渲染函数(render)` , `effect收集` 等几个部分** 来对于**初始化元素渲染**进行解析.
+在上一期 Vue3 解析系列中我们对 **`createAppAPI函数`** 进行了解析,但是并没有对核心方法 **`mount` 挂载逻辑** 进行解析.本期会从 **`创建VNode` 和 `组件初始化挂载`** 阶段进行解析.
 
 话不多说上源码:
 
@@ -52,9 +46,9 @@
 
 ---
 
-#### VNode
+### 创建VNode阶段
 
-**createVNode**
+#### createVNode
 
 看函数名也能知道这个函数是拿来创建 `VNode` 的.经常在面试的时候会被面试官问到什么是 `VNode` 呢,有什么作用呢,为什么需要 VNode? 不瞒大家说我也是被吊打的哪一位.
 
@@ -63,8 +57,8 @@
 - VNode 的作用:通过 render 将 template 模版描述成 VNode，然后进行一系列操作之后形成真实的 DOM 进行挂载。
 
 - VNode 的优点
-  1. 兼容性强，不受执行环境的影响。VNode 因为是 JS 对象，不管 Node 还是浏览器，都可以统一操作，从而获得了服务端渲染、原生渲染、手写渲染函数等能力。
-  2. 减少操作 DOM，任何页面的变化，都只使用 VNode 进行操作对比，只需要在最后一步挂载更新 DOM，不需要频繁操作 DOM，从而提高页面性能。
+  - 兼容性强，不受执行环境的影响。VNode 因为是 JS 对象，不管 Node 还是浏览器，都可以统一操作，从而获得了服务端渲染、原生渲染、手写渲染函数等能力。
+  - 减少操作 DOM，任何页面的变化，都只使用 VNode 进行操作对比，只需要在最后一步挂载更新 DOM，不需要频繁操作 DOM，从而提高页面性能。
 
 下面来看看源码
 
@@ -192,7 +186,7 @@ function _createVNode(
 }
 ```
 
-**normalizeChildren**
+#### normalizeChildren
 
 在创建 VNode 节点的过程中会通过 **按位或** 把子节点的类型赋予到父节点的类型 type 上.便于后续渲染时对子节点的操作
 
@@ -277,9 +271,10 @@ normalizeChildren(vnode: VNode, children: unknown) {
 
 ---
 
-#### 渲染函数
+### 组件初始化挂载阶段
 
-**render**
+#### render
+
 `render 函数` 涉及到 `vue` 里的一个核心思想:**虚拟 DOM(VNode)**
 `Vue` 通过建立一个**虚拟 DOM**来追踪自己要如何改变**真实 DOM**,并通过 `render函数` 生成**真实 DOM**.
 
@@ -306,7 +301,7 @@ const render: RootRenderFunction = (vnode, container) => {
 
 通过 `render` 函数我们发现主要的核心逻辑在 `patch` 函数内.
 
-**patch**
+#### patch
 
 ```javascript
  // packages/runtime-core/src/renderer.ts
@@ -349,8 +344,6 @@ const render: RootRenderFunction = (vnode, container) => {
       case Static:
         if (n1 == null) {
           mountStaticNode(n2, container, anchor, isSVG)
-        } else if (__DEV__) {
-          patchStaticNode(n1, n2, container, isSVG)
         }
         break
       case Fragment:
@@ -427,6 +420,7 @@ const render: RootRenderFunction = (vnode, container) => {
 ```
 
 **总结**
+
 其实别看`patch`函数这么长做的功能其实就以下几点
 
 1. 判断新旧 VNode 是否一致,不一致**直接卸载旧的 VNode**,然后重新渲染新的,**不会考虑可能的子节点复用**.**( 就是我们常说的同级比较 )**
@@ -435,7 +429,7 @@ const render: RootRenderFunction = (vnode, container) => {
 
 接下来看看怎么进行组件渲染的应该也是最关心的逻辑了.
 
-**processComponent**
+#### processComponent
 
 ```javascript
   // packages/runtime-core/src/renderer.ts
@@ -483,15 +477,15 @@ const render: RootRenderFunction = (vnode, container) => {
 ```
 
 **总结**
+
 通过是否存在 **新 vnode** 来判断是否是进入 **初始化逻辑(mount)** 还是 **更新逻辑(update)**
 
-**mountComponent**
+#### mountComponent
 
-挂载过程我准备分 3 个阶段来说
-
-- [初始化组件实例](#createComponentInstance)
-- [安装组件:组件初始化](#setupComponent)
-- 安装渲染函数
+挂载过程分3个阶段
+- [初始化组件实例 - createComponentInstance](#createComponentInstance)
+- [安装组件:组件初始化 - setupComponent](#setupComponent)
+- [安装渲染函数 - setupRenderEffect](#setupRenderEffect)
 
 ```javascript
 // 省略部分 DEV 环境代码
@@ -589,7 +583,7 @@ export function createComponentInstance(
 
 <span id="setupComponent">**setupComponent**</span>
 
-- 实际就是对 props 和 slots 进行处理
+- 对 props 和 slots 进行处理
 - 劫持了上下文
 - setup(effect) 执行后返回的结果 并且在内部进行错误捕获
 
@@ -620,55 +614,37 @@ export function setupComponent(
 }
 ```
 
+#### setupStatefulComponent
 
-**setupStatefulComponent**
+着重理解为什么要在 setup 函数执行前为什么要调用 pauseTracking 函数.
 
-`````javascript
+```javascript
 // packages/runtime-core/src/component.ts
 function setupStatefulComponent(
   instance: ComponentInternalInstance,
   isSSR: boolean
 ) {
+  // 省略部分 DEV 环境代码
   const Component = instance.type as ComponentOptions
 
-  if (__DEV__) {
-    if (Component.name) {
-      validateComponentName(Component.name, instance.appContext.config)
-    }
-    if (Component.components) {
-      const names = Object.keys(Component.components)
-      for (let i = 0; i < names.length; i++) {
-        validateComponentName(names[i], instance.appContext.config)
-      }
-    }
-    if (Component.directives) {
-      const names = Object.keys(Component.directives)
-      for (let i = 0; i < names.length; i++) {
-        validateDirectiveName(names[i])
-      }
-    }
-  }
-  // 0. create render proxy property access cache
+  // 在实例上创建了访问缓存对象
   instance.accessCache = Object.create(null)
-  // 1. create public instance / render proxy
-  // also mark it raw so it's never observed
+
   // 首先我们创建了instance.proxy，这个其实就是我们在使用 option api 的时候的this，所以这里要创建一个 proxy，在你调用this.xxx的时候他才能响应式得作出反应。
-  // 劫持了上下文
+  // 代理了上下文
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandlers)
-  if (__DEV__) {
-    exposePropsOnRenderContext(instance)
-  }
-  // 2. call setup()
-  // Vue 3.0 写法
+
   const { setup } = Component
+  // 存在 setup
   if (setup) {
     // 创建上下文  setup 内可以直接访问属性 context
-    // setup 参数大于 1 时 创建 createSetupContext
+    // setup 参数大于 1 时 调用 createSetupContext 函数 创建上下文
     const setupContext = (instance.setupContext =
       setup.length > 1 ? createSetupContext(instance) : null)
-
+    // 设置当前实例
     currentInstance = instance
 
+    // TODO 重点 暂停响应式 不理解后续会在 reactive模块 内里面进行详细的解析
     /**
      * 在执行setup的时候，我们的 state 其实是一个 reactive 的对象，
      * 后续我们调用state.a的时候，其实就是把当前的方法上下文(setup 方法)作为state对象的依赖进行保存，
@@ -677,9 +653,9 @@ function setupStatefulComponent(
      * 那么pauseTracking就是告诉响应式系统，接下去我们执行的方法就不要记录依赖了
      * 等到 setup 执行完毕后再进行响应式追踪
      */
-    // TODO 模糊 暂停响应式
     pauseTracking()
-    //TODO 执行 setup
+
+    //TODO 执行 setup 完毕后会对内部一些函数进行执行. 比如 reactive 那么这个时候就会进入到依赖收集过程
     // setup(effect) 执行后返回的结果 并且在内部进行错误捕获
     const setupResult = callWithErrorHandling(
       setup,
@@ -687,7 +663,7 @@ function setupStatefulComponent(
       ErrorCodes.SETUP_FUNCTION,
       [__DEV__ ? shallowReadonly(instance.props) : instance.props, setupContext]
     )
-    // TODO 模糊 重置响应式
+    // TODO 重置响应式
     resetTracking()
     // 执行完毕后置空
     currentInstance = null
@@ -703,19 +679,313 @@ function setupStatefulComponent(
         // async setup returned Promise.
         // bail here and wait for re-entry.
         instance.asyncDep = setupResult
-      } else if (__DEV__) {
-        warn(
-          `setup() returned a Promise, but the version of Vue you are using ` +
-            `does not support it yet.`
-        )
       }
     } else {
+      // setup 执行后返回的结果
       handleSetupResult(instance, setupResult, isSSR)
     }
   } else {
-    // TODO 是不是兼容 vue 2?
+    // 不存在 setup
+    // TODO 内部进行了对 Vue2 的兼容 ?
     finishComponentSetup(instance, isSSR)
   }
 }
-`````
+```
 
+**总结**
+
+通过 setupStatefulComponent 我们发现了该函数主要功能是:
+
+- 代理了上下文
+- 当 setup 参数大于 1 时创建上下文
+- 执行了 setup
+- 通过 handleSetupResult 函数 处理 setup 函数 执行后的结果
+
+顺着逻辑我们再去看看 handleSetupResult 函数 到底做了什么吧
+
+
+#### handleSetupResult
+
+通过 setupStatefulComponent 函数 我们知道了该函数主要的作用是对于 setup 函数 执行完成后的结果进行操作.
+
+```javascript
+// packages/runtime-core/src/component.ts
+export function handleSetupResult(
+  instance: ComponentInternalInstance,  // 当前实例
+  setupResult: unknown,  // setup(effect) 执行后返回的结果
+  isSSR: boolean   // 是否是 SSR
+) {
+  // 判断 setupResult(返回结果) 是否是函数
+  if (isFunction(setupResult)) {
+    // 可能返回的是个 render 渲染函数
+    if (__NODE_JS__ && (instance.type as ComponentOptions).__ssrInlineRender) {
+      // SSR
+      instance.ssrRender = setupResult
+    } else {
+      // 挂载到当前实例上 render 渲染函数
+      instance.render = setupResult as InternalRenderFunction
+    }
+  } else if (isObject(setupResult)) {
+    // 判断 setupResult(返回结果) 是否是对象 就是我们在开发过程中正常的返回
+    // 通过 proxyRefs 函数发现了对返回的对象进行了代理(暂时没想明白为什么要进行代理)
+    instance.setupState = proxyRefs(setupResult)
+  }
+  // 最后一步完成设置
+  finishComponentSetup(instance, isSSR)
+}
+```
+
+**总结**
+
+主要的逻辑:根据 setup(effect) 执行后返回的结果 来进行区分在当前实例上挂载 render 属性 或 代理后的 setupState 属性,最终执行 finishComponentSetup 函数
+
+#### finishComponentSetup
+
+```javascript
+// packages/runtime-core/src/component.ts
+function finishComponentSetup(
+  instance: ComponentInternalInstance,
+  isSSR: boolean
+) {
+  // 获取当前 实例的 节点
+  const Component = instance.type as ComponentOptions
+
+  if (__NODE_JS__ && isSSR) {
+    if (Component.render) {
+      instance.render = Component.render as InternalRenderFunction
+    }
+  } else if (!instance.render) {
+    // 没用 render 方法 会把 template 编译成 render 方法
+    // could be set from setup()
+    // compile 会通过 registerRuntimeCompiler 方法进行注册 请查看 packages/vue/src/index.ts 文件
+    if (compile && Component.template && !Component.render) {
+      Component.render = compile(Component.template, {
+        isCustomElement: instance.appContext.config.isCustomElement,
+        delimiters: Component.delimiters
+      })
+    }
+    // 在实例上挂载 render属性 其实就是当前 节点render方法
+    instance.render = (Component.render || NOOP) as InternalRenderFunction
+
+    // 看了 Vue 原始的 compile 方法发现执行到最后 instance.render._rc 属性总是为 true
+    // 这部分有兴趣的可以去看看 compileToFunction 函数, 在packages/vue/src/index.ts 文件内.这里暂不做展开
+    if (instance.render._rc) {
+      instance.withProxy = new Proxy(
+        instance.ctx,
+        RuntimeCompiledPublicInstanceProxyHandlers
+      )
+    }
+  }
+
+  // 兼容 2.0
+  if (__FEATURE_OPTIONS_API__) {
+    currentInstance = instance
+    pauseTracking()
+    // 兼容Vue2.x，合并配置项到vue组件实例，初始化watch、computed、methods等配置项，调用相关生命周期钩子
+    applyOptions(instance, Component)
+    resetTracking()
+    currentInstance = null
+  }
+}
+```
+
+**总结**
+
+主要的逻辑:在实例上挂载 render 属性.其实就是当前 节点 render 方法.最终合并配置项到 vue 组件实例，初始化 watch、computed、methods 等配置项，调用相关生命周期钩子.
+
+> 以上就是组件初始化的过程.接下来也是我们最终安装渲染函数过程(effect 收集)
+
+
+<span id="setupRenderEffect">**setupRenderEffect**</span>
+
+其实里面还涉及到渲染部分的知识点.后续再整个画一个流程图补充一下
+主要还是先关注 effect 副作用收集部分吧
+
+```javascript
+// packages/runtime-core/src/renderer.ts
+  const setupRenderEffect: SetupRenderEffectFn = (
+    instance,  // 组件实例
+    initialVNode,  // 初始化 vnode  其实就是 根组件节点生成的 VNode
+    container,
+    anchor,
+    parentSuspense,
+    isSVG,
+    optimized
+  ) => {
+    // TODO 副作用 effect 把组件的更新函数添加副作用函数 将来数据更新重新渲染
+    // 通过 instance.update 方法对 已经收集到的 effect 进行执行更新
+    instance.update = effect(function componentEffect() {
+      // 先判断当前实例是否已经挂载
+      if (!instance.isMounted) {
+        // 初始化流程
+        let vnodeHook: VNodeHook | null | undefined
+        const { el, props } = initialVNode
+        const { bm, m, parent } = instance
+
+        // beforeMount hook
+        if (bm) {
+          invokeArrayFns(bm)
+        }
+        // onVnodeBeforeMount
+        // beforeMount生命周期 注意这里是 vnode
+        if ((vnodeHook = props && props.onVnodeBeforeMount)) {
+          invokeVNodeHook(vnodeHook, parent, initialVNode)
+        }
+        // TODO 其实渲染这部分应该在渲染里面讲的...
+        // TODO 核心 渲染根节
+        // 原理都是调用之前绑定在实例上的 render 函数进行渲染
+        // renderComponentRoot源码位置 => packages/runtime-core/src/componentRenderUtils.ts
+        const subTree = (instance.subTree = renderComponentRoot(instance))
+        // TODO 核心 渲染子树 patch 方法在渲染模块内介绍过.可以网上翻翻
+        if (el && hydrateNode) {
+          // vnode has adopted host node - perform hydration instead of mount.
+          hydrateNode(
+            initialVNode.el as Node,
+            subTree,
+            instance,
+            parentSuspense
+          )
+        } else {
+          patch(
+            null,
+            subTree,
+            container,
+            anchor,
+            instance,
+            parentSuspense,
+            isSVG
+          )
+          initialVNode.el = subTree.el
+        }
+        // 对于生命周期这块的触发逻辑后续补足
+        // mounted hook
+        // 把mounted生命周期方法加入到队列
+        if (m) {
+          queuePostRenderEffect(m, parentSuspense)
+        }
+        // onVnodeMounted
+        if ((vnodeHook = props && props.onVnodeMounted)) {
+          const scopedInitialVNode = initialVNode
+          queuePostRenderEffect(() => {
+            invokeVNodeHook(vnodeHook!, parent, scopedInitialVNode)
+          }, parentSuspense)
+        }
+        // keep-alive 逻辑
+        // activated hook for keep-alive roots.
+        // #1742 activated hook must be accessed after first render
+        // since the hook may be injected by a child keep-alive
+        const { a } = instance
+        if (
+          a &&
+          initialVNode.shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE
+        ) {
+          queuePostRenderEffect(a, parentSuspense)
+        }
+        // 更改标记状态
+        instance.isMounted = true
+
+        // 释放引用避免内存泄露导致出现过个实例
+        // Vue3 issues #2458: deference mount-only object parameters to prevent memleaks
+        initialVNode = container = anchor = null as any
+      } else {
+        // ...省略了update 过程
+      }
+    }, prodEffectOptions)
+  }
+```
+
+**总结**
+
+通过对当前实例 isMounted 状态来判断是 update 还是 mounted.并且注册对应的生命周期.
+值得注意的是:
+
+- mounted 时会通过传入的实例创建对应的树,并且通过 patch 方法对整棵树进行渲染
+- update 时会通过传入的实例创建对应的新的树,并把新树和老树进行比对找出差异
+
+#### effect
+
+来看看 effect 到底做了什么
+
+```javascript
+// packages/reactivity/src/effect.ts
+export function effect<T = any>(
+  fn: () => T,
+  options: ReactiveEffectOptions = EMPTY_OBJ
+): ReactiveEffect<T> {
+  // 判断下传入的 componentEffect
+  if (isEffect(fn)) {
+    fn = fn.raw
+  }
+  // 通过传入的 componentEffect 创建对应的 ReactiveEffect
+  const effect = createReactiveEffect(fn, options)
+  // 如果 lazy 不为 true 则直接调用 创建完成的 effect
+  if (!options.lazy) {
+    // 进入数据渲染及依赖收集环节
+    effect()
+  }
+  // 返回 effect
+  return effect
+}
+```
+**总结**
+
+通过传入的 componentEffect (其实就是包裹着渲染函数的回调函数) 和 options 生成最终的effect(副作用函数).并且执行
+整个过程其实可以理解为  effect() => 组件渲染
+
+#### createReactiveEffect
+
+创建 effect 对象
+
+这部分如果没有看数据响应式模块的话可能有些比较难理解不知道是干什么的.后续会在数据响应式篇内会进行解析
+```javascript
+// TODO 生成effect
+function createReactiveEffect<T = any>(
+  fn: () => T,
+  options: ReactiveEffectOptions
+): ReactiveEffect<T> {
+  const effect = function reactiveEffect(): unknown {
+    // 如果 effect 不是激活状态，这种情况发生在我们调用了 effect 中的 stop 方法之后，那么先前没有传入调用 scheduler 函数的话，直接调用原始方法fn，否则直接返回。
+    if (!effect.active) {
+      return options.scheduler ? undefined : fn()
+    }
+    //那么处于激活状态的 effect 要怎么进行处理呢？首先判断是否当前 effect 是否在 effectStack 当中，如果在，则不进行调用，这个主要是为了避免重复调用.
+    if (!effectStack.includes(effect)) {
+      // 清除副作用
+      cleanup(effect)
+      try {
+        //启用追踪
+        enableTracking()
+        // 把当前 effect 放入 effectStack 中
+        effectStack.push(effect)
+        // 然后讲 activeEffect 设置为当前的 effect
+        // 主要的作用就是在 触发 track 依赖搜集的时候 建立一个映射关系
+        activeEffect = effect
+        // fn 并且返回值
+        return fn()
+      } finally {
+        // 当这一切完成的时候，finally 阶段，会把当前 effect 弹出，恢复原来的收集依赖的状态，还有恢复原来的 activeEffect。
+        effectStack.pop()
+        // 重置追踪
+        resetTracking()
+        // 最终要重置一下不然会出现依赖对应的实例错误
+        activeEffect = effectStack[effectStack.length - 1]
+      }
+    }
+  } as ReactiveEffect
+  effect.id = uid++ //自增 id 唯一 effect
+  effect.allowRecurse = !!options.allowRecurse
+  effect._isEffect = true //用于标识方法是否是effect
+  effect.active = true //是否被激活
+  effect.raw = fn // 传入的回调方法
+  effect.deps = [] // 持有当前 effect 的dep 数组
+  effect.options = options // 创建effect是传入的options
+  return effect
+}
+```
+
+----------
+
+往期文章:
+[Vue3 解析系列之createAppAPI函数](https://juejin.cn/post/7000186937805897742)
+
+> 本文是 Vue3 解析的第二篇.后续将进行 Vue3 数据响应式阶段的解析.
