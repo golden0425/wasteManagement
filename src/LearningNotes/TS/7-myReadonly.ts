@@ -42,5 +42,3 @@ const todo: MyReadonly<Todo> = {
 todo.title = "Hello"
 todo.description = "barFoo"
 
-
-
