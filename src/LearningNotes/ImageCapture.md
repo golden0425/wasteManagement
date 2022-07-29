@@ -1,0 +1,1 @@
+## ImageCapture 解析
